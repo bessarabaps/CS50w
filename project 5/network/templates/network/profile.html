@@ -1,0 +1,140 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+  <div class="w-50 mx-auto">
+    <div class="d-flex justify-content-between">
+      <h2>@{{username}}</h2>
+      {% if user.is_authenticated %}
+        {% if username != user.username %}
+          {% if is_following %}
+          <form action="{% url 'unfollow' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="userfollowed" value="{{ username }}" >
+            <input class="btn btn-outline-secondary" type="submit" value="Unfollow">
+          </form>
+          {% else %}
+          <form action="{% url 'follow' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="userfollowed" value="{{ username }}" >
+            <input class="btn btn-outline-primary" type="submit" value="Follow">
+          </form>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="d-flex justify-content-start">
+      <span><b>{{followers.count}}</b> followers &nbsp; &nbsp; &nbsp; <b>{{following.count}}</b> following</span>
+    </div>
+    <br>
+
+    {% for post in posts %}
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between">
+            <div class="text-muted">{{post.date|date:"j E Y H:i"}}</div>
+            {% if user.is_authenticated %}
+              {% if username == user.username %}
+              <button class="btn btn-outline-primary" data-id="{{post.id}}" id="edit"><i class="far fa-edit"></i></button>
+              {% endif %}
+            {% endif %}
+        </div>
+        <div class="card-body">
+          <p id="postText">{{post.bodyPost}}</p>
+          {% if user.is_authenticated %}
+            {% if post in userLike %}
+              <button class="btn btn-primary" data-id="{{post.id}}" id="like">{{post.likePost.count}} <i class="far fa-heart"></i></button>
+            {% else %}
+              <button class="btn btn-primary" data-id="{{post.id}}" id="unlike">{{post.likePost.count}} <i class="fas fa-heart"></i></button>
+            {% endif %}
+          {% else %}
+            <button disabled class="btn btn-primary" data-id="{{post.id}}" id="like">{{post.likePost.count}} <i class="far fa-heart"></i></button>
+          {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <nav aria-label="Page navigation example">
+      <ul class="pagination justify-content-center">
+        {% if posts.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{posts.previous_page_number}}">Previous</a></li>
+        {% endif %}
+        {% if posts.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{posts.next_page_number}}">Next</a></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  </div>
+
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('button').forEach(button => {
+        button.onclick = function() {
+
+          const element = event.target
+          const postID = this.dataset.id
+          const buttonID = event.target.id
+
+          //logic "Edit post"
+          if(buttonID === 'edit') {
+            console.log(`Edit post № ${postID}`)
+
+            const originalText = element.parentElement.parentElement.querySelector("#postText").innerText
+            console.log(`Text post: ${originalText}`)
+
+            //open textarea for edit
+            if (element.innerHTML === '<i class="far fa-edit"></i>') {
+
+              element.parentElement.parentElement.querySelector("#postText").innerHTML = '<textarea class="form-control" id="editText"></textarea>'
+              element.parentElement.parentElement.querySelector("#editText").innerText = originalText
+              element.innerHTML = '<i class="far fa-save"></i>'
+            }
+            //save new text
+            else if (element.innerHTML === '<i class="far fa-save"></i>') {
+
+              fetch(`/edit/${postID}`, {
+                method: 'POST',
+                headers: {"X-CSRFToken": '{{csrf_token}}'},
+
+                body: JSON.stringify({
+                  bodyPost: element.parentElement.parentElement.querySelector("#editText").value
+                })
+              })
+              .then(response => response.json())
+              .then(resault => {
+                console.log(resault.data)
+
+                element.parentElement.parentElement.querySelector("#postText").innerHTML = resault.data
+                element.innerHTML = '<i class="far fa-edit"></i>'
+
+              })
+            }
+          }
+          //logic "Like/unlike post"
+          else if (buttonID === 'like' || buttonID === 'unlike') {
+            console.log(`Like post № ${postID}`)
+
+            fetch(`/like/${postID}`)
+              .then(response => response.json())
+              .then(resault => {
+                console.log(resault.message)
+
+                if (buttonID === 'like') {
+                  element.id = 'unlike'
+                  element.innerHTML = `${resault.numLikes} <i class="fas fa-heart">`
+                }
+                else if (buttonID === 'unlike') {
+                  element.id = 'like'
+                  element.innerHTML = `${resault.numLikes} <i class="far fa-heart">`
+                }
+              })
+
+          }
+        }
+      })
+    }
+    )
+
+  </script>
+
+{% endblock %}

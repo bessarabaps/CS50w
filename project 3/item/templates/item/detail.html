@@ -1,0 +1,103 @@
+{% extends "auctions/layout.html" %}
+
+{% block title %} {{ Item.name }} {% endblock %}
+
+{% block body %}
+
+<div class="container">
+  {% if message %}
+    <div class="alert alert-primary" role="alert">
+      {{ message }}
+    </div>
+  {% endif %}
+  <div class="form-group">
+    <div class="row g-0">
+      <div class="col-md-4">
+        {% if Item.image %}
+          <img src="{{ Item.image.url }}" class="img-fluid rounded-start" alt="...">
+        {% endif %}
+        {% if user.is_authenticated %}
+          {% if item_in_watchlist %}
+            <form action="{% url 'item:remove_Watchlist' Item.id  %}" method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-block mb-4">Remove from watchlist</button>
+            </form>
+          {% else %}
+            <form action="{% url 'item:add_Watchlist' Item.id %}" method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-block mb-4">Add to watchlist</button>
+            </form>
+          {% endif %}
+        {% endif %}
+        {% if Item.active %}
+          {% if user.is_authenticated %}
+            {% if owner %}
+            <form action="{% url 'item:close_item' Item.id %}" method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-warning btn-block mb-4">Close item</button>
+            </form>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </div>
+      <div class="col-md-8">
+        <div class="card-body">
+          <h3 class="card-title">{{ Item.name }}</h3>
+          <p class="card-text">{{ Item.description }}</p>
+          <p class="card-text"><small class="text-muted"> Current bid: <b>{{ Item.price }}$</b> </small></p>
+          {% if Item.active %}
+            {% if user.is_authenticated %}
+              <form action="{% url 'item:add_bid' Item.id %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-sm-3">
+                    <input class="form-control" required step="0.01" type="number" name="bid">
+                  </div>
+                  <div class="col-sm-2">
+                    <button type="submit" class="btn btn-success btn-block mb-4">Bid on</button>
+                  </div>
+                </div>
+              </form>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <h2>Commets:</h2>
+
+  {% if Item.active %}
+    {% if user.is_authenticated %}
+    <form action="{% url 'item:add_comment' Item.id %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-10">
+          <input class="form-control" placeholder="Comment..." type="text" name="new_comment">
+        </div>
+        <div class="col-2">
+          <button type="submit" class="btn btn-success btn-block mb-4">Add comment</button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  {% endif %}
+
+
+
+
+
+    {% for comment in comments %}
+      <div class="card mb-2">
+        <h5 class="card-header">{{ comment.user }}</h5>
+        <div class="card-body">
+          <p class="card-text">{{ comment.message }}</p>
+
+        </div>
+      </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

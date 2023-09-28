@@ -1,0 +1,25 @@
+{% extends "network/layout.html" %}
+
+{% block title %} New item {% endblock %}
+
+{% block body %}
+
+    <div class="text-center">
+        <h2>New post</h2>
+    </div>
+
+      <form action="{% url 'newPost' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="w-25 my-6 mx-auto">
+          <div class="my-3">
+            <textarea name="bodyPost" class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary btn-block">Add</button>
+          </div>
+        </div>
+
+
+    </form>
+
+{% endblock %}
